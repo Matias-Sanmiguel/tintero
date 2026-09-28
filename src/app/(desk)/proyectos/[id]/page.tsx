@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FormSelect } from "@/components/form-select";
+import { PageHeader } from "@/components/page-header";
 import { Stamp } from "@/components/Stamp";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { createBudget, setProjectStatus } from "@/server/actions";
 import { load } from "@/server/db";
 import { projectStatusLabel } from "@/server/format";
@@ -31,50 +37,49 @@ export default async function ProyectoPage({
 
   return (
     <>
-      <p className="kicker">Proyecto</p>
-      <div className="spread">
-        <h1>{project.name}</h1>
-        {budget ? <Stamp status={budget.status} /> : null}
-      </div>
-      <p className="lead">{project.summary || "Sin resumen."}</p>
-      <p className="hint">Responsable: {owner?.name ?? "sin asignar"}</p>
+      <PageHeader
+        kicker="Proyecto"
+        title={project.name}
+        description={project.summary || "Sin resumen."}
+        action={budget ? <Stamp status={budget.status} /> : undefined}
+      />
+      <p className="text-sm text-muted-foreground">Responsable: {owner?.name ?? "sin asignar"}</p>
       {isStaff(member) ? (
-        <form className="inline section" action={setProjectStatus}>
+        <form className="flex flex-wrap items-end gap-3" action={setProjectStatus}>
           <input type="hidden" name="id" value={project.id} />
-          <label>
-            Estado
-            <select name="status" defaultValue={project.status}>
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {projectStatusLabel[status]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="button" type="submit">
-            Guardar estado
-          </button>
+          <Field className="w-full max-w-xs">
+            <FieldLabel htmlFor="project-status">Estado</FieldLabel>
+            <FormSelect
+              id="project-status"
+              name="status"
+              defaultValue={project.status}
+              options={statuses.map((status) => ({ value: status, label: projectStatusLabel[status] }))}
+            />
+          </Field>
+          <Button type="submit">Guardar estado</Button>
         </form>
       ) : (
-        <p className="section">{projectStatusLabel[project.status]}</p>
+        <Badge variant="secondary">{projectStatusLabel[project.status]}</Badge>
       )}
-      <section className="section sheet">
-        <h2>Presupuesto</h2>
-        {budget ? (
-          <p>
-            <Link href={`/presupuestos/${budget.id}`}>Abrir el documento en LaTeX</Link>
-          </p>
-        ) : isStaff(member) ? (
-          <form action={createBudget}>
-            <input type="hidden" name="projectId" value={project.id} />
-            <button className="button" type="submit">
-              Armar presupuesto
-            </button>
-          </form>
-        ) : (
-          <p>Todavía no hay presupuesto.</p>
-        )}
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Presupuesto</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {budget ? (
+            <Button variant="link" className="px-0" asChild>
+              <Link href={`/presupuestos/${budget.id}`}>Abrir el documento en LaTeX</Link>
+            </Button>
+          ) : isStaff(member) ? (
+            <form action={createBudget}>
+              <input type="hidden" name="projectId" value={project.id} />
+              <Button type="submit">Armar presupuesto</Button>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">Todavía no hay presupuesto.</p>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }

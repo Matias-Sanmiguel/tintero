@@ -1,4 +1,11 @@
+import { FormSelect } from "@/components/form-select";
 import { Notice } from "@/components/Notice";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { createInventory, deleteInventory, updateInventory } from "@/server/actions";
 import { load } from "@/server/db";
 import { conditionLabel } from "@/server/format";
@@ -16,104 +23,130 @@ export default async function InventarioPage({
   const member = await requireMember();
   const db = await load();
   const staff = isStaff(member);
+  const conditionOptions = conditions.map((condition) => ({
+    value: condition,
+    label: conditionLabel[condition],
+  }));
 
   return (
     <>
-      <p className="kicker">Cosas del club</p>
-      <h1>Inventario</h1>
-      <p className="lead">Qué hay, cuántos, en qué estado y dónde está. El préstamo con fecha de devolución queda para después: hoy se anota quién lo tiene.</p>
+      <PageHeader
+        kicker="Cosas del club"
+        title="Inventario"
+        description="Qué hay, cuántos, en qué estado y dónde está. El préstamo con fecha de devolución queda para después: hoy se anota quién lo tiene."
+      />
       <Notice error={query.error} />
-      <div className="stack">
+      <div className="flex flex-col gap-3">
         {db.inventory.map((item) => (
-          <form key={item.id} className="sheet form" action={updateInventory}>
-            <div className="spread">
-              <h2>{item.name}</h2>
-              <span className="hint">{conditionLabel[item.condition]}</span>
-            </div>
-            <input type="hidden" name="id" value={item.id} />
-            <div className="grid-2">
-              <label>
-                Cantidad
-                <input name="quantity" type="number" min={0} defaultValue={item.quantity} disabled={!staff} />
-              </label>
-              <label>
-                Estado
-                <select name="condition" defaultValue={item.condition} disabled={!staff}>
-                  {conditions.map((condition) => (
-                    <option key={condition} value={condition}>
-                      {conditionLabel[condition]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Dónde está
-                <input name="location" defaultValue={item.location} disabled={!staff} />
-              </label>
-              <label>
-                Quién lo tiene
-                <input name="holder" defaultValue={item.holder} disabled={!staff} />
-              </label>
-            </div>
-            <label>
-              Proyecto de origen
-              <select name="projectId" defaultValue={item.projectId ?? ""} disabled={!staff}>
-                <option value="">Ninguno</option>
-                {db.projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {staff ? (
-              <div className="inline">
-                <button className="button" type="submit">
-                  Guardar
-                </button>
-                <button className="button secondary" type="submit" formAction={deleteInventory}>
-                  Quitar
-                </button>
+          <Card key={item.id}>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle>{item.name}</CardTitle>
+                <Badge variant="secondary">{conditionLabel[item.condition]}</Badge>
               </div>
-            ) : null}
-          </form>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-4" action={updateInventory}>
+                <input type="hidden" name="id" value={item.id} />
+                <FieldGroup>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor={`qty-${item.id}`}>Cantidad</FieldLabel>
+                      <Input
+                        id={`qty-${item.id}`}
+                        name="quantity"
+                        type="number"
+                        min={0}
+                        defaultValue={item.quantity}
+                        disabled={!staff}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor={`cond-${item.id}`}>Estado</FieldLabel>
+                      <FormSelect
+                        id={`cond-${item.id}`}
+                        name="condition"
+                        defaultValue={item.condition}
+                        options={conditionOptions}
+                        disabled={!staff}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor={`loc-${item.id}`}>Dónde está</FieldLabel>
+                      <Input id={`loc-${item.id}`} name="location" defaultValue={item.location} disabled={!staff} />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor={`hold-${item.id}`}>Quién lo tiene</FieldLabel>
+                      <Input id={`hold-${item.id}`} name="holder" defaultValue={item.holder} disabled={!staff} />
+                    </Field>
+                  </div>
+                  <Field>
+                    <FieldLabel htmlFor={`proj-${item.id}`}>Proyecto de origen</FieldLabel>
+                    <FormSelect
+                      id={`proj-${item.id}`}
+                      name="projectId"
+                      defaultValue={item.projectId ?? ""}
+                      disabled={!staff}
+                      options={[
+                        { value: "__none__", label: "Ninguno" },
+                        ...db.projects.map((project) => ({ value: project.id, label: project.name })),
+                      ]}
+                    />
+                  </Field>
+                </FieldGroup>
+                {staff ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="submit">Guardar</Button>
+                    <Button variant="outline" type="submit" formAction={deleteInventory}>
+                      Quitar
+                    </Button>
+                  </div>
+                ) : null}
+              </form>
+            </CardContent>
+          </Card>
         ))}
       </div>
       {staff ? (
-        <form className="form sheet section" action={createInventory}>
-          <h2>Sumar algo</h2>
-          <label>
-            Nombre
-            <input name="name" required />
-          </label>
-          <div className="grid-2">
-            <label>
-              Cantidad
-              <input name="quantity" type="number" min={1} defaultValue={1} />
-            </label>
-            <label>
-              Estado
-              <select name="condition" defaultValue="disponible">
-                {conditions.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {conditionLabel[condition]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Dónde está
-              <input name="location" />
-            </label>
-            <label>
-              Quién lo tiene
-              <input name="holder" />
-            </label>
-          </div>
-          <button className="button" type="submit">
-            Agregar al inventario
-          </button>
-        </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sumar algo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="flex flex-col gap-4" action={createInventory}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="inv-name">Nombre</FieldLabel>
+                  <Input id="inv-name" name="name" required />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="inv-qty">Cantidad</FieldLabel>
+                    <Input id="inv-qty" name="quantity" type="number" min={1} defaultValue={1} />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="inv-cond">Estado</FieldLabel>
+                    <FormSelect
+                      id="inv-cond"
+                      name="condition"
+                      defaultValue="disponible"
+                      options={conditionOptions}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="inv-loc">Dónde está</FieldLabel>
+                    <Input id="inv-loc" name="location" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="inv-hold">Quién lo tiene</FieldLabel>
+                    <Input id="inv-hold" name="holder" />
+                  </Field>
+                </div>
+              </FieldGroup>
+              <Button type="submit">Agregar al inventario</Button>
+            </form>
+          </CardContent>
+        </Card>
       ) : null}
     </>
   );

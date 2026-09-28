@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Nunito, Outfit } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const sans = Outfit({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-outfit",
 });
 
 const display = Nunito({
@@ -21,8 +23,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${sans.variable} ${display.variable}`}>
-      <body>{children}</body>
+    <html lang="es" className={cn(sans.variable, display.variable)}>
+      <body className="min-h-svh bg-background text-foreground antialiased">
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }

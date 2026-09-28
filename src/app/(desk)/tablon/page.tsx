@@ -1,4 +1,12 @@
 import { Notice } from "@/components/Notice";
+import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { addComment, createPost, togglePin, toggleSignup } from "@/server/actions";
 import { load } from "@/server/db";
 import { fecha } from "@/server/format";
@@ -19,124 +27,146 @@ export default async function TablonPage({
 
   return (
     <>
-      <p className="kicker">Comunicación</p>
-      <h1>Tablón</h1>
-      <p className="lead">
-        La comisión fija avisos. Cualquier miembro abre una convocatoria con cupo y el resto se anota.
-      </p>
+      <PageHeader
+        kicker="Comunicación"
+        title="Tablón"
+        description="La comisión fija avisos. Cualquier miembro abre una convocatoria con cupo y el resto se anota."
+      />
       <Notice error={query.error} />
-      <div className="split">
+      <div className="grid gap-6 lg:grid-cols-2">
         {staff ? (
-          <form className="form sheet" action={createPost}>
-            <h2>Publicar aviso</h2>
-            <input type="hidden" name="kind" value="aviso" />
-            <label>
-              Título
-              <input name="title" required />
-            </label>
-            <label>
-              Texto
-              <textarea name="body" required />
-            </label>
-            <label>
-              Fecha, si corresponde
-              <input name="eventDate" type="date" />
-            </label>
-            <button className="button" type="submit">
-              Publicar aviso
-            </button>
-          </form>
+          <Card>
+            <CardHeader>
+              <CardTitle>Publicar aviso</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-4" action={createPost}>
+                <input type="hidden" name="kind" value="aviso" />
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="aviso-title">Título</FieldLabel>
+                    <Input id="aviso-title" name="title" required />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="aviso-body">Texto</FieldLabel>
+                    <Textarea id="aviso-body" name="body" required />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="aviso-date">Fecha, si corresponde</FieldLabel>
+                    <Input id="aviso-date" name="eventDate" type="date" />
+                  </Field>
+                </FieldGroup>
+                <Button type="submit">Publicar aviso</Button>
+              </form>
+            </CardContent>
+          </Card>
         ) : (
-          <p className="hint">Los avisos los publica la comisión.</p>
+          <p className="text-sm text-muted-foreground">Los avisos los publica la comisión.</p>
         )}
-        <form className="form sheet" action={createPost}>
-          <h2>Buscar gente</h2>
-          <input type="hidden" name="kind" value="convocatoria" />
-          <label>
-            Título
-            <input name="title" required />
-          </label>
-          <label>
-            Qué hace falta
-            <textarea name="body" required />
-          </label>
-          <div className="grid-2">
-            <label>
-              Cupo
-              <input name="capacity" type="number" min={1} placeholder="Sin límite" />
-            </label>
-            <label>
-              Día
-              <input name="eventDate" type="date" />
-            </label>
-          </div>
-          <button className="button" type="submit">
-            Publicar convocatoria
-          </button>
-        </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>Buscar gente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="flex flex-col gap-4" action={createPost}>
+              <input type="hidden" name="kind" value="convocatoria" />
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="call-title">Título</FieldLabel>
+                  <Input id="call-title" name="title" required />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="call-body">Qué hace falta</FieldLabel>
+                  <Textarea id="call-body" name="body" required />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="call-capacity">Cupo</FieldLabel>
+                    <Input id="call-capacity" name="capacity" type="number" min={1} placeholder="Sin límite" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="call-date">Día</FieldLabel>
+                    <Input id="call-date" name="eventDate" type="date" />
+                  </Field>
+                </div>
+              </FieldGroup>
+              <Button type="submit">Publicar convocatoria</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-      <section className="section stack">
+      <section className="flex flex-col gap-3">
         {posts.map((post) => {
           const full = post.capacity != null && post.signups.length >= post.capacity;
           const inIt = post.signups.includes(member.id);
           return (
-            <article key={post.id} className="sheet stack">
-              <div className="spread">
-                <div>
-                  <p className="kicker">{post.kind === "aviso" ? "Aviso" : "Convocatoria"}{post.pinned ? " · fijado" : ""}</p>
-                  <h2>{post.title}</h2>
+            <Card key={post.id}>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={post.kind === "aviso" ? "default" : "secondary"}>
+                        {post.kind === "aviso" ? "Aviso" : "Convocatoria"}
+                      </Badge>
+                      {post.pinned ? <Badge className="bg-accent text-accent-foreground">Fijado</Badge> : null}
+                    </div>
+                    <CardTitle>{post.title}</CardTitle>
+                    <CardDescription>
+                      {names.get(post.authorId) ?? "Alguien"}
+                      {post.eventDate ? ` · ${fecha(post.eventDate)}` : ""}
+                    </CardDescription>
+                  </div>
+                  {staff ? (
+                    <form action={togglePin}>
+                      <input type="hidden" name="id" value={post.id} />
+                      <Button variant="outline" type="submit">
+                        {post.pinned ? "Desfijar" : "Fijar"}
+                      </Button>
+                    </form>
+                  ) : null}
                 </div>
-                {staff ? (
-                  <form action={togglePin}>
-                    <input type="hidden" name="id" value={post.id} />
-                    <button className="button secondary" type="submit">
-                      {post.pinned ? "Desfijar" : "Fijar"}
-                    </button>
-                  </form>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <p>{post.body}</p>
+                {post.kind === "convocatoria" ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {post.signups.length}
+                      {post.capacity != null ? ` / ${post.capacity}` : ""} anotados
+                    </p>
+                    <ul className="list-disc pl-5 text-sm">
+                      {post.signups.map((id) => (
+                        <li key={id}>{names.get(id) ?? "Alguien"}</li>
+                      ))}
+                    </ul>
+                    <form action={toggleSignup}>
+                      <input type="hidden" name="id" value={post.id} />
+                      <Button type="submit" disabled={!inIt && full}>
+                        {inIt ? "Bajarme" : full ? "Cupo completo" : "Me sumo"}
+                      </Button>
+                    </form>
+                  </>
                 ) : null}
-              </div>
-              <p>{post.body}</p>
-              <p className="hint">
-                {names.get(post.authorId) ?? "Alguien"}
-                {post.eventDate ? ` · ${fecha(post.eventDate)}` : ""}
-              </p>
-              {post.kind === "convocatoria" ? (
-                <>
-                  <p className="mono">
-                    {post.signups.length}
-                    {post.capacity != null ? ` / ${post.capacity}` : ""} anotados
-                  </p>
-                  <ul>
-                    {post.signups.map((id) => (
-                      <li key={id}>{names.get(id) ?? "Alguien"}</li>
-                    ))}
-                  </ul>
-                  <form action={toggleSignup}>
+                <Separator />
+                <div className="flex flex-col gap-3">
+                  {post.comments.map((comment) => (
+                    <p key={comment.id} className="text-sm">
+                      <span className="font-medium">{names.get(comment.authorId) ?? "Alguien"}.</span> {comment.body}
+                    </p>
+                  ))}
+                  <form className="flex flex-wrap items-end gap-2" action={addComment}>
                     <input type="hidden" name="id" value={post.id} />
-                    <button className="button" type="submit" disabled={!inIt && full}>
-                      {inIt ? "Bajarme" : full ? "Cupo completo" : "Me sumo"}
-                    </button>
+                    <Field className="min-w-48 flex-1">
+                      <FieldLabel htmlFor={`comment-${post.id}`}>Comentario</FieldLabel>
+                      <Input id={`comment-${post.id}`} name="body" maxLength={500} />
+                    </Field>
+                    <Button variant="outline" type="submit">
+                      Comentar
+                    </Button>
                   </form>
-                </>
-              ) : null}
-              <div className="stack">
-                {post.comments.map((comment) => (
-                  <p key={comment.id} className="comment">
-                    <strong>{names.get(comment.authorId) ?? "Alguien"}.</strong> {comment.body}
-                  </p>
-                ))}
-                <form className="inline" action={addComment}>
-                  <input type="hidden" name="id" value={post.id} />
-                  <label className="grow">
-                    Comentario
-                    <input name="body" maxLength={500} />
-                  </label>
-                  <button className="button secondary" type="submit">
-                    Comentar
-                  </button>
-                </form>
-              </div>
-            </article>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </section>

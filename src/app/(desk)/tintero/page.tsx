@@ -1,4 +1,12 @@
+import Link from "next/link";
+import { PageHeader } from "@/components/page-header";
 import { Notice } from "@/components/Notice";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { archiveIdea, createIdea, promoteIdea, voteIdea } from "@/server/actions";
 import { load } from "@/server/db";
 import { requireMember } from "@/server/session";
@@ -17,77 +25,90 @@ export default async function TinteroPage({
 
   return (
     <>
-      <p className="kicker">Ideas</p>
-      <h1>Tintero</h1>
-      <p className="lead">Cualquier miembro deja una idea. La comisión la promueve a proyecto cuando decide hacerla.</p>
+      <PageHeader
+        kicker="Ideas"
+        title="Tintero"
+        description="Cualquier miembro deja una idea. La comisión la promueve a proyecto cuando decide hacerla."
+      />
       <Notice error={query.error} />
-      <form className="form sheet" action={createIdea}>
-        <label>
-          Título
-          <input name="title" required />
-        </label>
-        <label>
-          De qué se trata
-          <textarea name="body" required />
-        </label>
-        <label>
-          Tags, separados por coma
-          <input name="tags" placeholder="taller, hardware" />
-        </label>
-        <button className="button" type="submit">
-          Dejar la idea
-        </button>
-      </form>
-      <section className="section stack">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dejar una idea</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="flex flex-col gap-4" action={createIdea}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="idea-title">Título</FieldLabel>
+                <Input id="idea-title" name="title" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="idea-body">De qué se trata</FieldLabel>
+                <Textarea id="idea-body" name="body" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="idea-tags">Tags, separados por coma</FieldLabel>
+                <Input id="idea-tags" name="tags" placeholder="taller, hardware" />
+              </Field>
+            </FieldGroup>
+            <Button type="submit">Dejar la idea</Button>
+          </form>
+        </CardContent>
+      </Card>
+      <section className="flex flex-col gap-3">
         {ideas.map((idea) => (
-          <article key={idea.id} className="sheet">
-            <div className="spread">
-              <h2>{idea.title}</h2>
-              <span className="mono">{idea.votes.length} votos</span>
-            </div>
-            <p>{idea.body}</p>
-            <p className="hint">
-              {name.get(idea.authorId) ?? "Alguien"} · {idea.status}
-            </p>
-            {idea.tags.length ? (
-              <div className="tags">
-                {idea.tags.map((tag) => (
-                  <span key={tag} className="tag">
-                    {tag}
-                  </span>
-                ))}
+          <Card key={idea.id}>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-3">
+                <CardTitle>{idea.title}</CardTitle>
+                <Badge variant="secondary">{idea.votes.length} votos</Badge>
               </div>
-            ) : null}
-            <div className="inline">
-              {idea.status !== "archivada" ? (
-                <form action={voteIdea}>
-                  <input type="hidden" name="ideaId" value={idea.id} />
-                  <button className="button secondary" type="submit">
-                    {idea.votes.includes(member.id) ? "Quitar voto" : "Votar"}
-                  </button>
-                </form>
+              <CardDescription>
+                {name.get(idea.authorId) ?? "Alguien"} · {idea.status}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <p>{idea.body}</p>
+              {idea.tags.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {idea.tags.map((tag) => (
+                    <Badge key={tag} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               ) : null}
-              {isStaff(member) && idea.status === "abierta" ? (
-                <form action={promoteIdea}>
-                  <input type="hidden" name="ideaId" value={idea.id} />
-                  <button className="button" type="submit">
-                    Promover a proyecto
-                  </button>
-                </form>
-              ) : null}
-              {idea.projectId ? (
-                <a href={`/proyectos/${idea.projectId}`}>Ver proyecto</a>
-              ) : null}
-              {idea.status !== "promovida" && idea.status !== "archivada" && (idea.authorId === member.id || isStaff(member)) ? (
-                <form action={archiveIdea}>
-                  <input type="hidden" name="ideaId" value={idea.id} />
-                  <button className="button secondary" type="submit">
-                    Archivar
-                  </button>
-                </form>
-              ) : null}
-            </div>
-          </article>
+              <div className="flex flex-wrap items-center gap-2">
+                {idea.status !== "archivada" ? (
+                  <form action={voteIdea}>
+                    <input type="hidden" name="ideaId" value={idea.id} />
+                    <Button variant="outline" type="submit">
+                      {idea.votes.includes(member.id) ? "Quitar voto" : "Votar"}
+                    </Button>
+                  </form>
+                ) : null}
+                {isStaff(member) && idea.status === "abierta" ? (
+                  <form action={promoteIdea}>
+                    <input type="hidden" name="ideaId" value={idea.id} />
+                    <Button type="submit">Promover a proyecto</Button>
+                  </form>
+                ) : null}
+                {idea.projectId ? (
+                  <Button variant="link" asChild>
+                    <Link href={`/proyectos/${idea.projectId}`}>Ver proyecto</Link>
+                  </Button>
+                ) : null}
+                {idea.status !== "promovida" && idea.status !== "archivada" && (idea.authorId === member.id || isStaff(member)) ? (
+                  <form action={archiveIdea}>
+                    <input type="hidden" name="ideaId" value={idea.id} />
+                    <Button variant="outline" type="submit">
+                      Archivar
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </section>
     </>

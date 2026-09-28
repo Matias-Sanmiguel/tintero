@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FormSelect } from "@/components/form-select";
 import { Notice } from "@/components/Notice";
+import { PageHeader } from "@/components/page-header";
 import { Stamp } from "@/components/Stamp";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { addBudgetItem, deleteBudgetItem, updateBudget } from "@/server/actions";
 import { load } from "@/server/db";
 import { budgetStatusLabel, budgetTotal, pesos } from "@/server/format";
 import { requireMember } from "@/server/session";
 import { isStaff, type BudgetStatus } from "@/server/types";
 
-const statuses: BudgetStatus[] = [
-  "borrador",
-  "enviado",
-  "observado",
-  "aprobado",
-  "rechazado",
-];
+const statuses: BudgetStatus[] = ["borrador", "enviado", "observado", "aprobado", "rechazado"];
 
 export default async function PresupuestoPage({
   params,
@@ -34,131 +36,156 @@ export default async function PresupuestoPage({
 
   return (
     <>
-      <p className="kicker">Documento</p>
-      <div className="spread">
-        <h1>{budget.title}</h1>
-        <Stamp status={budget.status} />
-      </div>
-      <p className="lead">
-        {project ? <Link href={`/proyectos/${project.id}`}>{project.name}</Link> : "Proyecto"}
-        {". La fuente es LaTeX. El PDF se compila con pdflatex en el servidor."}
-      </p>
+      <PageHeader
+        kicker="Documento"
+        title={budget.title}
+        description={
+          <>
+            {project ? (
+              <Link href={`/proyectos/${project.id}`} className="text-primary underline-offset-4 hover:underline">
+                {project.name}
+              </Link>
+            ) : (
+              "Proyecto"
+            )}
+            {". La fuente es LaTeX. El PDF se compila con pdflatex en el servidor."}
+          </>
+        }
+        action={<Stamp status={budget.status} />}
+      />
       <Notice error={query.error} />
-      <div className="inline">
-        <a className="button" href={`/presupuestos/${budget.id}/pdf`}>
-          Bajar PDF
-        </a>
-        <a className="button secondary" href={`/presupuestos/${budget.id}/tex`}>
-          Bajar .tex
-        </a>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild>
+          <a href={`/presupuestos/${budget.id}/pdf`}>Bajar PDF</a>
+        </Button>
+        <Button variant="outline" asChild>
+          <a href={`/presupuestos/${budget.id}/tex`}>Bajar .tex</a>
+        </Button>
       </div>
-      <p className="hint section">Total {pesos(budgetTotal(budget.items))}</p>
-      <table className="section">
-        <thead>
-          <tr>
-            <th>Descripción</th>
-            <th className="num">Cant.</th>
-            <th className="num">Unitario</th>
-            <th className="num">Subtotal</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {budget.items.map((item) => (
-            <tr key={item.id}>
-              <td>
-                {item.description}
-                {item.supplierUrl ? (
-                  <>
-                    <br />
-                    <a href={item.supplierUrl}>{item.supplierUrl}</a>
-                  </>
-                ) : null}
-              </td>
-              <td className="num">{item.quantity}</td>
-              <td className="num">{pesos(item.unitPrice)}</td>
-              <td className="num">{pesos(item.quantity * item.unitPrice)}</td>
-              <td>
-                {staff ? (
-                  <form action={deleteBudgetItem}>
-                    <input type="hidden" name="budgetId" value={budget.id} />
-                    <input type="hidden" name="itemId" value={item.id} />
-                    <button className="button secondary" type="submit">
-                      Quitar
-                    </button>
-                  </form>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <p className="text-sm text-muted-foreground">Total {pesos(budgetTotal(budget.items))}</p>
+      <Card>
+        <CardContent className="pt-(--card-spacing)">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Descripción</TableHead>
+                <TableHead className="text-right">Cant.</TableHead>
+                <TableHead className="text-right">Unitario</TableHead>
+                <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {budget.items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    {item.description}
+                    {item.supplierUrl ? (
+                      <>
+                        <br />
+                        <a href={item.supplierUrl} className="text-primary underline-offset-4 hover:underline">
+                          {item.supplierUrl}
+                        </a>
+                      </>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="text-right">{item.quantity}</TableCell>
+                  <TableCell className="text-right">{pesos(item.unitPrice)}</TableCell>
+                  <TableCell className="text-right">{pesos(item.quantity * item.unitPrice)}</TableCell>
+                  <TableCell>
+                    {staff ? (
+                      <form action={deleteBudgetItem}>
+                        <input type="hidden" name="budgetId" value={budget.id} />
+                        <input type="hidden" name="itemId" value={item.id} />
+                        <Button variant="outline" size="sm" type="submit">
+                          Quitar
+                        </Button>
+                      </form>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
       {staff ? (
         <>
-          <form className="form sheet section" action={addBudgetItem}>
-            <h2>Agregar ítem</h2>
-            <input type="hidden" name="budgetId" value={budget.id} />
-            <label>
-              Descripción
-              <input name="description" required />
-            </label>
-            <div className="grid-2">
-              <label>
-                Cantidad
-                <input name="quantity" type="number" min={1} defaultValue={1} required />
-              </label>
-              <label>
-                Precio unitario, en pesos
-                <input name="unitPrice" inputMode="numeric" required placeholder="31000" />
-              </label>
-            </div>
-            <label>
-              Link del proveedor
-              <input name="supplierUrl" type="url" placeholder="https://" />
-            </label>
-            <button className="button" type="submit">
-              Agregar ítem
-            </button>
-          </form>
-          <form className="form sheet section" action={updateBudget}>
-            <h2>Datos del documento</h2>
-            <input type="hidden" name="id" value={budget.id} />
-            <label>
-              Título
-              <input name="title" defaultValue={budget.title} required />
-            </label>
-            <div className="grid-2">
-              <label>
-                Destinatario
-                <input name="recipient" defaultValue={budget.recipient} required />
-              </label>
-              <label>
-                Estado
-                <select name="status" defaultValue={budget.status}>
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {budgetStatusLabel[status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label>
-              Asunto
-              <input name="subject" defaultValue={budget.subject} required />
-            </label>
-            <label>
-              Fundamento
-              <textarea name="rationale" defaultValue={budget.rationale} />
-            </label>
-            <label>
-              Fecha límite para presentarlo
-              <input name="dueDate" type="date" defaultValue={budget.dueDate ?? ""} />
-            </label>
-            <button className="button" type="submit">
-              Guardar documento
-            </button>
-          </form>
+          <Card>
+            <CardHeader>
+              <CardTitle>Agregar ítem</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-4" action={addBudgetItem}>
+                <input type="hidden" name="budgetId" value={budget.id} />
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="item-desc">Descripción</FieldLabel>
+                    <Input id="item-desc" name="description" required />
+                  </Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="item-qty">Cantidad</FieldLabel>
+                      <Input id="item-qty" name="quantity" type="number" min={1} defaultValue={1} required />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="item-price">Precio unitario, en pesos</FieldLabel>
+                      <Input id="item-price" name="unitPrice" inputMode="numeric" required placeholder="31000" />
+                    </Field>
+                  </div>
+                  <Field>
+                    <FieldLabel htmlFor="item-url">Link del proveedor</FieldLabel>
+                    <Input id="item-url" name="supplierUrl" type="url" placeholder="https://" />
+                  </Field>
+                </FieldGroup>
+                <Button type="submit">Agregar ítem</Button>
+              </form>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Datos del documento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-4" action={updateBudget}>
+                <input type="hidden" name="id" value={budget.id} />
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="budget-title">Título</FieldLabel>
+                    <Input id="budget-title" name="title" defaultValue={budget.title} required />
+                  </Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="budget-recipient">Destinatario</FieldLabel>
+                      <Input id="budget-recipient" name="recipient" defaultValue={budget.recipient} required />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="budget-status">Estado</FieldLabel>
+                      <FormSelect
+                        id="budget-status"
+                        name="status"
+                        defaultValue={budget.status}
+                        options={statuses.map((status) => ({ value: status, label: budgetStatusLabel[status] }))}
+                      />
+                    </Field>
+                  </div>
+                  <Field>
+                    <FieldLabel htmlFor="budget-subject">Asunto</FieldLabel>
+                    <Input id="budget-subject" name="subject" defaultValue={budget.subject} required />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="budget-rationale">Fundamento</FieldLabel>
+                    <Textarea id="budget-rationale" name="rationale" defaultValue={budget.rationale} />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="budget-due">Fecha límite para presentarlo</FieldLabel>
+                    <Input id="budget-due" name="dueDate" type="date" defaultValue={budget.dueDate ?? ""} />
+                  </Field>
+                </FieldGroup>
+                <Button type="submit">Guardar documento</Button>
+              </form>
+            </CardContent>
+          </Card>
         </>
       ) : null}
     </>

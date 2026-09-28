@@ -1,4 +1,4 @@
-import { Nav } from "@/components/Nav";
+import { AppShell } from "@/components/app-shell";
 import { roleLabel } from "@/server/format";
 import { requireMember } from "@/server/session";
 
@@ -11,9 +11,8 @@ export default async function DeskLayout({
 }) {
   const member = await requireMember();
   return (
-    <div className="shell">
-      <Nav name={member.name} role={roleLabel[member.role]} />
-      <main className="main">{children}</main>
-    </div>
+    <AppShell name={member.name} role={roleLabel[member.role]}>
+      {children}
+    </AppShell>
   );
 }

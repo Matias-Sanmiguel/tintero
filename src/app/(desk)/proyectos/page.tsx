@@ -1,5 +1,13 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/page-header";
 import { Notice } from "@/components/Notice";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { createProject } from "@/server/actions";
 import { load } from "@/server/db";
 import { projectStatusLabel } from "@/server/format";
@@ -18,45 +26,61 @@ export default async function ProyectosPage({
 
   return (
     <>
-      <p className="kicker">Trabajo</p>
-      <h1>Proyectos</h1>
-      <p className="lead">Lo que el club decidió hacer, desde la propuesta hasta el cierre.</p>
+      <PageHeader
+        kicker="Trabajo"
+        title="Proyectos"
+        description="Lo que el club decidió hacer, desde la propuesta hasta el cierre."
+      />
       <Notice error={query.error} />
-      <table>
-        <thead>
-          <tr>
-            <th>Proyecto</th>
-            <th>Estado</th>
-            <th>Responsable</th>
-          </tr>
-        </thead>
-        <tbody>
-          {db.projects.map((project) => (
-            <tr key={project.id}>
-              <td>
-                <Link href={`/proyectos/${project.id}`}>{project.name}</Link>
-              </td>
-              <td>{projectStatusLabel[project.status]}</td>
-              <td>{names.get(project.ownerId) ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Card>
+        <CardContent className="pt-(--card-spacing)">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Proyecto</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Responsable</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {db.projects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell>
+                    <Link href={`/proyectos/${project.id}`} className="font-medium text-primary underline-offset-4 hover:underline">
+                      {project.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{projectStatusLabel[project.status]}</Badge>
+                  </TableCell>
+                  <TableCell>{names.get(project.ownerId) ?? "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
       {isStaff(member) ? (
-        <form className="form sheet section" action={createProject}>
-          <h2>Abrir un proyecto</h2>
-          <label>
-            Nombre
-            <input name="name" required />
-          </label>
-          <label>
-            Resumen
-            <textarea name="summary" />
-          </label>
-          <button className="button" type="submit">
-            Crear proyecto
-          </button>
-        </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>Abrir un proyecto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="flex flex-col gap-4" action={createProject}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="project-name">Nombre</FieldLabel>
+                  <Input id="project-name" name="name" required />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="project-summary">Resumen</FieldLabel>
+                  <Textarea id="project-summary" name="summary" />
+                </Field>
+              </FieldGroup>
+              <Button type="submit">Crear proyecto</Button>
+            </form>
+          </CardContent>
+        </Card>
       ) : null}
     </>
   );
