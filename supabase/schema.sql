@@ -82,6 +82,14 @@ create table if not exists events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists write_lock (
+  id smallint primary key,
+  locked_at timestamptz
+);
+
+insert into write_lock (id, locked_at) values (1, null)
+  on conflict (id) do nothing;
+
 alter table members enable row level security;
 alter table ideas enable row level security;
 alter table projects enable row level security;
@@ -89,3 +97,4 @@ alter table budgets enable row level security;
 alter table inventory_items enable row level security;
 alter table posts enable row level security;
 alter table events enable row level security;
+alter table write_lock enable row level security;

@@ -580,6 +580,42 @@ async function saveSupabase(db: DB) {
   );
 }
 
+const WRITE_LOCK_ID = 1;
+const WRITE_LOCK_STALE_MS = 30_000;
+const WRITE_LOCK_MAX_WAIT_MS = 10_000;
+const WRITE_LOCK_POLL_MS = 150;
+
+// `locked()` only serializes writes within this Node process. On Vercel each
+// request can land on a different instance, so two members saving at the same
+// time would silently overwrite each other's read-modify-write. This row-level
+// lock in Postgres closes that gap across processes.
+async function acquireWriteLock(): Promise<void> {
+  const client = supabase();
+  const deadline = Date.now() + WRITE_LOCK_MAX_WAIT_MS;
+  for (;;) {
+    const staleBefore = new Date(Date.now() - WRITE_LOCK_STALE_MS).toISOString();
+    const { data, error } = await client
+      .from("write_lock")
+      .update({ locked_at: new Date().toISOString() })
+      .eq("id", WRITE_LOCK_ID)
+      .or(`locked_at.is.null,locked_at.lt.${staleBefore}`)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (data && data.length > 0) return;
+    if (Date.now() > deadline) {
+      throw new Error("La base está ocupada, probá de nuevo.");
+    }
+    await pause(WRITE_LOCK_POLL_MS + Math.random() * 100);
+  }
+}
+
+async function releaseWriteLock(): Promise<void> {
+  await supabase()
+    .from("write_lock")
+    .update({ locked_at: null })
+    .eq("id", WRITE_LOCK_ID);
+}
+
 export async function load(): Promise<DB> {
   return locked(async () =>
     supabaseOn() ? loadSupabase() : loadJson(),
@@ -588,11 +624,21 @@ export async function load(): Promise<DB> {
 
 export async function update(mutator: (db: DB) => void) {
   return locked(async () => {
-    const db = supabaseOn() ? await loadSupabase() : await loadJson();
-    mutator(db);
-    if (supabaseOn()) await saveSupabase(db);
-    else await saveJson(db);
-    return db;
+    if (!supabaseOn()) {
+      const db = await loadJson();
+      mutator(db);
+      await saveJson(db);
+      return db;
+    }
+    await acquireWriteLock();
+    try {
+      const db = await loadSupabase();
+      mutator(db);
+      await saveSupabase(db);
+      return db;
+    } finally {
+      await releaseWriteLock();
+    }
   });
 }
 

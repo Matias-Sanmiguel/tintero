@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { load, update } from "./db";
 import { pesosInput, text, whole } from "./format";
-import { hashPassword, verifyPassword } from "./password";
+import { DUMMY_HASH, hashPassword, verifyPassword } from "./password";
 import { clearSession, requireMember, requireStaff, setSession } from "./session";
 import { isStaff, type DB } from "./types";
 
@@ -42,7 +42,8 @@ export async function login(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const db = await load();
   const member = db.members.find((item) => item.email === email);
-  if (!member || !verifyPassword(password, member.passwordHash)) {
+  const ok = verifyPassword(password, member?.passwordHash ?? DUMMY_HASH);
+  if (!member || !ok) {
     redirect("/login?error=credenciales");
   }
   if (member.status !== "activo") {
@@ -382,10 +383,11 @@ export async function updateMember(formData: FormData) {
     const row = db.members.find((item) => item.id === id);
     if (!row || row.id === actor.id) return;
     if (
-      role === "miembro" ||
-      role === "comision" ||
-      role === "tesorero" ||
-      role === "presidente"
+      actor.role === "presidente" &&
+      (role === "miembro" ||
+        role === "comision" ||
+        role === "tesorero" ||
+        role === "presidente")
     ) {
       row.role = role;
     }
