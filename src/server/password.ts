@@ -6,6 +6,8 @@ export function hashPassword(password: string) {
   return `${salt}:${hash}`;
 }
 
+export const DUMMY_HASH = hashPassword("no-such-account");
+
 export function verifyPassword(password: string, stored: string) {
   const [salt, hash] = stored.split(":");
   if (!salt || !hash) return false;

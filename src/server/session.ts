@@ -9,7 +9,12 @@ import { isStaff, publicMember, type PublicMember } from "./types";
 const COOKIE = "tintero_session";
 
 function secret() {
-  return process.env.SESSION_SECRET || "tintero-dev-secret-change-me";
+  const value = process.env.SESSION_SECRET;
+  if (value) return value;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Falta SESSION_SECRET en producción.");
+  }
+  return "tintero-dev-secret-change-me";
 }
 
 function sign(id: string) {

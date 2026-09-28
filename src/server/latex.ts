@@ -12,10 +12,14 @@ const execFileAsync = promisify(execFile);
 
 export function texEscape(value: string) {
   return value
-    .replace(/\\/g, "\\textbackslash{}")
-    .replace(/[&%$#_{}]/g, (char) => `\\${char}`)
-    .replace(/~/g, "\\textasciitilde{}")
-    .replace(/\^/g, "\\textasciicircum{}");
+    .split("\\")
+    .map((part) =>
+      part
+        .replace(/[&%$#_{}]/g, (char) => `\\${char}`)
+        .replace(/~/g, "\\textasciitilde{}")
+        .replace(/\^/g, "\\textasciicircum{}"),
+    )
+    .join("\\textbackslash{}");
 }
 
 function paragraphs(value: string) {

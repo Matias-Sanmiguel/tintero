@@ -7,7 +7,8 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 function cell(value: string) {
-  return `"${value.replace(/"/g, '""')}"`;
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
 }
 
 export async function GET() {

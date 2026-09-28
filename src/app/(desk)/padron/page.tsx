@@ -91,13 +91,20 @@ export default async function PadronPage({
                 <td colSpan={3}>
                   <form className="inline" action={updateMember}>
                     <input type="hidden" name="id" value={row.id} />
-                    <select name="role" defaultValue={row.role} aria-label={`Rol de ${row.name}`}>
-                      {roles.map((role) => (
-                        <option key={role} value={role}>
-                          {roleLabel[role]}
-                        </option>
-                      ))}
-                    </select>
+                    {member.role === "presidente" ? (
+                      <select name="role" defaultValue={row.role} aria-label={`Rol de ${row.name}`}>
+                        {roles.map((role) => (
+                          <option key={role} value={role}>
+                            {roleLabel[role]}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>
+                        <span>{roleLabel[row.role]}</span>
+                        <input type="hidden" name="role" value={row.role} />
+                      </>
+                    )}
                     <select name="status" defaultValue={row.status} aria-label={`Estado de ${row.name}`}>
                       {statuses.map((status) => (
                         <option key={status} value={status}>
