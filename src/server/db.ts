@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
+import { cache } from "react";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { hashPassword } from "./password";
 import type {
@@ -37,12 +38,15 @@ function supabaseOn() {
   );
 }
 
+let client: SupabaseClient | undefined;
+
 function supabase(): SupabaseClient {
-  return createClient(
+  client ??= createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
+  return client;
 }
 
 function asArray<T>(value: unknown, map: (row: unknown) => T): T[] {
@@ -483,101 +487,103 @@ async function replaceTable(table: string, rows: Record<string, unknown>[]) {
 }
 
 async function saveSupabase(db: DB) {
-  await replaceTable(
-    "members",
-    db.members.map((member) => ({
-      id: member.id,
-      email: member.email,
-      name: member.name,
-      password_hash: member.passwordHash,
-      role: member.role,
-      career: member.career,
-      year: member.year,
-      status: member.status,
-      joined_at: member.joinedAt,
-    })),
-  );
-  await replaceTable(
-    "ideas",
-    db.ideas.map((idea) => ({
-      id: idea.id,
-      title: idea.title,
-      body: idea.body,
-      tags: idea.tags,
-      votes: idea.votes,
-      author_id: idea.authorId,
-      status: idea.status,
-      project_id: idea.projectId,
-      created_at: idea.createdAt,
-    })),
-  );
-  await replaceTable(
-    "projects",
-    db.projects.map((project) => ({
-      id: project.id,
-      name: project.name,
-      summary: project.summary,
-      status: project.status,
-      owner_id: project.ownerId,
-      idea_id: project.ideaId,
-      created_at: project.createdAt,
-    })),
-  );
-  await replaceTable(
-    "budgets",
-    db.budgets.map((budget) => ({
-      id: budget.id,
-      project_id: budget.projectId,
-      title: budget.title,
-      recipient: budget.recipient,
-      subject: budget.subject,
-      rationale: budget.rationale,
-      status: budget.status,
-      due_date: budget.dueDate,
-      items: budget.items,
-      created_at: budget.createdAt,
-    })),
-  );
-  await replaceTable(
-    "inventory_items",
-    db.inventory.map((item) => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      condition: item.condition,
-      location: item.location,
-      holder: item.holder,
-      project_id: item.projectId,
-      created_at: item.createdAt,
-    })),
-  );
-  await replaceTable(
-    "posts",
-    db.posts.map((post) => ({
-      id: post.id,
-      kind: post.kind,
-      title: post.title,
-      body: post.body,
-      pinned: post.pinned,
-      author_id: post.authorId,
-      capacity: post.capacity,
-      event_date: post.eventDate,
-      signups: post.signups,
-      comments: post.comments,
-      created_at: post.createdAt,
-    })),
-  );
-  await replaceTable(
-    "events",
-    db.events.map((event) => ({
-      id: event.id,
-      title: event.title,
-      date: event.date,
-      kind: event.kind,
-      notes: event.notes,
-      created_at: event.createdAt,
-    })),
-  );
+  await Promise.all([
+    replaceTable(
+      "members",
+      db.members.map((member) => ({
+        id: member.id,
+        email: member.email,
+        name: member.name,
+        password_hash: member.passwordHash,
+        role: member.role,
+        career: member.career,
+        year: member.year,
+        status: member.status,
+        joined_at: member.joinedAt,
+      })),
+    ),
+    replaceTable(
+      "ideas",
+      db.ideas.map((idea) => ({
+        id: idea.id,
+        title: idea.title,
+        body: idea.body,
+        tags: idea.tags,
+        votes: idea.votes,
+        author_id: idea.authorId,
+        status: idea.status,
+        project_id: idea.projectId,
+        created_at: idea.createdAt,
+      })),
+    ),
+    replaceTable(
+      "projects",
+      db.projects.map((project) => ({
+        id: project.id,
+        name: project.name,
+        summary: project.summary,
+        status: project.status,
+        owner_id: project.ownerId,
+        idea_id: project.ideaId,
+        created_at: project.createdAt,
+      })),
+    ),
+    replaceTable(
+      "budgets",
+      db.budgets.map((budget) => ({
+        id: budget.id,
+        project_id: budget.projectId,
+        title: budget.title,
+        recipient: budget.recipient,
+        subject: budget.subject,
+        rationale: budget.rationale,
+        status: budget.status,
+        due_date: budget.dueDate,
+        items: budget.items,
+        created_at: budget.createdAt,
+      })),
+    ),
+    replaceTable(
+      "inventory_items",
+      db.inventory.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        condition: item.condition,
+        location: item.location,
+        holder: item.holder,
+        project_id: item.projectId,
+        created_at: item.createdAt,
+      })),
+    ),
+    replaceTable(
+      "posts",
+      db.posts.map((post) => ({
+        id: post.id,
+        kind: post.kind,
+        title: post.title,
+        body: post.body,
+        pinned: post.pinned,
+        author_id: post.authorId,
+        capacity: post.capacity,
+        event_date: post.eventDate,
+        signups: post.signups,
+        comments: post.comments,
+        created_at: post.createdAt,
+      })),
+    ),
+    replaceTable(
+      "events",
+      db.events.map((event) => ({
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        kind: event.kind,
+        notes: event.notes,
+        created_at: event.createdAt,
+      })),
+    ),
+  ]);
 }
 
 const WRITE_LOCK_ID = 1;
@@ -616,11 +622,24 @@ async function releaseWriteLock(): Promise<void> {
     .eq("id", WRITE_LOCK_ID);
 }
 
-export async function load(): Promise<DB> {
-  return locked(async () =>
-    supabaseOn() ? loadSupabase() : loadJson(),
-  );
+const freshForMs = 20_000;
+let snapshot: { db: DB; at: number } | null = null;
+
+function remember(db: DB) {
+  snapshot = { db, at: Date.now() };
+  return db;
 }
+
+async function readDb() {
+  if (snapshot && Date.now() - snapshot.at < freshForMs) return snapshot.db;
+  const db = supabaseOn() ? await loadSupabase() : await loadJson();
+  return remember(db);
+}
+
+export const load = cache(async function load(): Promise<DB> {
+  const db = await locked(() => readDb());
+  return structuredClone(db);
+});
 
 export async function update(mutator: (db: DB) => void) {
   return locked(async () => {
@@ -628,6 +647,7 @@ export async function update(mutator: (db: DB) => void) {
       const db = await loadJson();
       mutator(db);
       await saveJson(db);
+      remember(db);
       return db;
     }
     await acquireWriteLock();
@@ -635,6 +655,7 @@ export async function update(mutator: (db: DB) => void) {
       const db = await loadSupabase();
       mutator(db);
       await saveSupabase(db);
+      remember(db);
       return db;
     } finally {
       await releaseWriteLock();
