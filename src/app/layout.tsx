@@ -21,9 +21,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const themeScript = `(function(){try{var t=localStorage.getItem("tintero-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}})()`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={cn(sans.variable, display.variable)}>
+    <html lang="es" className={cn(sans.variable, display.variable)} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-svh bg-background text-foreground antialiased">
         <TooltipProvider>{children}</TooltipProvider>
       </body>

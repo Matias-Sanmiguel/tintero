@@ -1,4 +1,5 @@
 import { Notice } from "@/components/Notice";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -41,7 +42,10 @@ export default async function LoginPage({
       <section className="flex items-center justify-center bg-background p-6">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>{empty ? "Crear la presidencia" : "Entrar"}</CardTitle>
+            <div className="flex items-start justify-between gap-3">
+              <CardTitle>{empty ? "Crear la presidencia" : "Entrar"}</CardTitle>
+              <ThemeToggle />
+            </div>
             <CardDescription>
               {empty
                 ? "La primera ficha queda activa y con rol de presidencia."

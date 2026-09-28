@@ -12,6 +12,7 @@ import {
   Package,
   Users,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { logout } from "@/server/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -79,14 +80,14 @@ export function AppShell({
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild tooltip="IMAS+">
                 <Link href="/inicio">
-                  <span className="flex size-8 items-center justify-center rounded-lg bg-primary font-wordmark text-lg text-primary-foreground">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-wordmark text-lg text-primary-foreground">
                     <span className="text-accent">+</span>
                   </span>
-                  <span className="grid text-left leading-tight">
-                    <span className="font-wordmark text-xl tracking-tight text-primary">
+                  <span className="grid min-w-0 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="truncate font-wordmark text-xl tracking-tight text-primary">
                       imas<span className="text-accent">+</span>
                     </span>
-                    <span className="text-xs tracking-[0.14em] text-muted-foreground uppercase">tech club</span>
+                    <span className="truncate text-xs tracking-[0.14em] text-muted-foreground uppercase">tech club</span>
                   </span>
                 </Link>
               </SidebarMenuButton>
@@ -128,7 +129,7 @@ export function AppShell({
         <SidebarFooter>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto w-full justify-start gap-2 px-2 py-2">
+              <Button variant="ghost" className="h-auto w-full justify-start gap-2 px-2 py-2 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
                 <Avatar size="sm">
                   <AvatarFallback className="bg-primary text-primary-foreground">{initials(name) || "IM"}</AvatarFallback>
                 </Avatar>
@@ -167,6 +168,9 @@ export function AppShell({
           <p className="font-wordmark text-lg tracking-tight text-primary">
             imas<span className="text-accent">+</span>
           </p>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </header>
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
       </SidebarInset>

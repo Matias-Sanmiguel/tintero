@@ -599,12 +599,12 @@ async function acquireWriteLock(): Promise<void> {
   const client = supabase();
   const deadline = Date.now() + WRITE_LOCK_MAX_WAIT_MS;
   for (;;) {
-    const staleBefore = new Date(Date.now() - WRITE_LOCK_STALE_MS).toISOString();
+    const staleBefore = new Date(Date.now() - WRITE_LOCK_STALE_MS).toISOString().replace(/\.\d{3}Z$/, "Z");
     const { data, error } = await client
       .from("write_lock")
       .update({ locked_at: new Date().toISOString() })
       .eq("id", WRITE_LOCK_ID)
-      .or(`locked_at.is.null,locked_at.lt.${staleBefore}`)
+      .or(`locked_at.is.null,locked_at.lt."${staleBefore}"`)
       .select("id");
     if (error) throw new Error(error.message);
     if (data && data.length > 0) return;
